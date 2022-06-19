@@ -19,7 +19,7 @@ For each record in the dataset, it is defined the following information.
 - Triaxial acceleration from the accelerometer (total acceleration) and the estiamted body acceleration
 - A 561-feature vector with time and frequency domain variables
 - The activity label
-An identifier of the subject who carried out the experiment.
+- An identifier of the subject who carried out the experiment.
 
 
 
