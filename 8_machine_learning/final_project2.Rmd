@@ -1,0 +1,114 @@
+---
+title: "final_project_2"
+author: "Aaron"
+date: "7/7/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+## Environmental Setup
+
+```{r}
+    library(caret)
+    library(randomForest)
+```
+
+## Loading the data and Preprocessing
+```{r}
+    trainRaw = read.csv("pml-training.csv")
+    testRaw <- read.csv("pml-testing.csv")
+```
+
+First, we will look at the data for each column. After that, we have to remove the variables which are not related to the exercise (e.g. the column number)
+```{r}
+    str(trainRaw)
+    train <- trainRaw[, 6:ncol(trainRaw)]
+```
+
+Now, we will split the data into training and testing sets
+```{r}
+    set.seed(42)
+    inTrain <- createDataPartition(y=train$classe, p=0.7, list=F)
+    training <- train[inTrain,]
+    testing <- train[-inTrain,]
+    
+```
+
+At this point, we remove the variables which are similar
+```{r}
+    nzv <- nearZeroVar(train, saveMetrics=T)
+    keepFeat <- row.names(nzv[nzv$nzv==FALSE,])
+    trainig <- training[,keepFeat]
+```
+Moreover,we will remove the variable with all NAs
+```{r}
+    training <- training[, colSums(is.na(training)) == 0]
+    
+    dim(training)
+```
+
+This threshold is hard, but we maintain more than 50 features after the removal
+
+
+## Model Training
+First, we set up a K-Fold cross validation which K=5
+```{r}
+    modCtl <- trainControl(method="cv", number=5)
+```
+
+Let's fit the Random Forest model
+```{r}
+    set.seed(42)
+    modRf <- train(classe~., data=training, method='rf', trControL=modCtl)
+    
+```
+
+Once fitted, it is possible to get the model's information
+```{r}
+    modRf$finalModel
+```
+
+Let's evaluate the model with the validation set. We will measure the accuracy and the confusion matrix
+```{r}
+    predRf <- predict(modRf, newdata=testing)
+    confusionMatrix(predRf, testing$classe)$table
+    confusionMatrix(predRf,testing$classe)$table
+```
+We can see that the accuracy is pretty high.
+
+Apart from th at, we can also fit a gradient boosting model
+```{r}
+    modGbm <- train(classe~., data=training, method="gbm", trControl=modCtl, verbose=F)
+
+```
+```{r}
+    modGbm$finalModel
+```
+
+Evaluation:
+```{r}
+    predGbm <- predict(modGbm, newdata=testing)
+    confusionMatrix(predGbm, testing$classe)$table
+    confusionMatrix(predGbm, testing$classe)$overall[1]
+```
+We can see that the accuracy is also pretty high
+
+## Quiz
+Comparting the two models, we can see that the Random Forest model has better accuracy in the validation set. Nonetheless, the final comparison will be in the test set.
+
+Random Forest:
+```{r}
+    predRfTest <- predict(modRf, newdata=testRaw)
+    predRfTest
+```
+
+GBM model:
+```{r}
+    predGbmTest <- predict(modGbm, newdata=testRaw)
+    table(predRfTest, predGbmTest)
+```
+The results are pretty similar, as we can see above.
